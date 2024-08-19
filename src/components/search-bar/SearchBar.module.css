@@ -1,0 +1,40 @@
+.header {
+  background-color: #1877F2;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  padding: 3px 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+.form {
+  align-items: center;
+  background-color: #fff;
+  border-radius: 5px;
+  display: flex;
+  padding: 5px;
+}
+
+.button {
+  background-color: transparent;
+  border: none;
+  color: grey;
+  font-size: 12px;
+  margin-right: 5px;
+  padding: 0;
+}
+
+.input {
+  background-color: transparent;
+  border: none;
+  color: black;
+  padding: 0;
+  width: 200px;
+}
+
+.input:focus,
+.button:focus {
+  outline: none;
+}

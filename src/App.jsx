@@ -48,9 +48,9 @@ function App() {
     setModalIsOpen(true);
   }
 
-  const onCloseModal = useCallback(() => {
+  function onCloseModal() {
     setModalIsOpen(false);
-  }, []);
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -92,20 +92,6 @@ function App() {
       fetchData();
     }
   }, [currentPage, currentQuery, shapeData]);
-
-  useEffect(() => {
-    const handleKeyDown = e => {
-      if ((e.key === 'Escape' || e.key === 'Esc') && isModalOpen) {
-        onCloseModal();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isModalOpen, onCloseModal]);
 
   return (
     <>

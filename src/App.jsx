@@ -1,10 +1,11 @@
 import axios from "axios";
 import { ACCESS_KEY } from './config';
 import { useEffect, useState, useCallback } from 'react';
-import { ColorRing } from 'react-loader-spinner'
 import './App.css';
+import ErrorMessage from './components/error-message/ErrorMessage';
 import ImageGallery from './components/image-gallery/ImageGallery';
 import ImageModal from './components/image-modal/ImageModal';
+import Loader from './components/loader/Loader';
 import LoadMore from './components/load-more/LoadMore';
 import SearchBar from './components/search-bar/SearchBar';
 
@@ -19,7 +20,7 @@ function App() {
   const [modalImg, setModalImg] = useState({});
   const [noResults, setNoResults] = useState(false);
 
-  async function search(query, page = 1) {
+  async function onSubmit(query, page = 1) {
     setCurrentPage(page);
     setIsErrorVisible(false);
 
@@ -27,58 +28,18 @@ function App() {
       setCurrentQuery(query);
       setGallery([]);
     }
-
-    axios.defaults.headers = ['Access-Control-Allow-Origin'];
-
-    try {
-      if (gallery.length === 0) {
-        setIsLoading(true);
-      }
-
-      const { data } = await axios({
-        method: 'get',
-        url: `https://api.unsplash.com/search/photos/?client_id=${ACCESS_KEY}&query=${query}&page=${page}&per_page=20`,
-        responseType: 'json',
-      });
-
-      if (data.results.length === 0) {
-        setNoResults(true);
-      } else {
-        setNoResults(false);
-        setGallery(prevGallery => {
-          return [
-            ...prevGallery,
-            ...shapeData(data.results),
-          ];
-        });
-      }
-
-      setTotalPages(data.total_pages);
-    } catch(e) {
-      console.log(e);
-      setIsErrorVisible(true);
-    } finally {
-      setIsLoading(false);
-    }
   }
 
-  function shapeData(data) {
-    const arr = [];
-
-    data.forEach(item => {
-      arr.push({
-        alt: item.alt_description,
-        id: item.id,
-        fullImg: item.urls.full,
-        smallImg: item.urls.small,
-      });
-    });
-
-    return arr;
-  }
+  const shapeData = useCallback(data => {
+    return data.map(item => ({
+      alt: item.alt_description,
+      id: item.id,
+      fullImg: item.urls.full,
+      smallImg: item.urls.small,
+    }));
+  }, []);
 
   function onLoadMore() {
-    search(currentQuery, currentPage + 1);
     setCurrentPage(currentPage + 1);
   }
 
@@ -90,6 +51,47 @@ function App() {
   const onCloseModal = useCallback(() => {
     setModalIsOpen(false);
   }, []);
+
+  useEffect(() => {
+    async function fetchData() {
+      axios.defaults.headers = ['Access-Control-Allow-Origin'];
+  
+      try {
+        if (gallery.length === 0) {
+          setIsLoading(true);
+        }
+  
+        const { data } = await axios({
+          method: 'get',
+          url: `https://api.unsplash.com/search/photos/?client_id=${ACCESS_KEY}&query=${currentQuery}&page=${currentPage}&per_page=20`,
+          responseType: 'json',
+        });
+  
+        if (data.results.length === 0) {
+          setNoResults(true);
+        } else {
+          setNoResults(false);
+          setGallery(prevGallery => {
+            return [
+              ...prevGallery,
+              ...shapeData(data.results),
+            ];
+          });
+        }
+  
+        setTotalPages(data.total_pages);
+      } catch(e) {
+        console.log(e);
+        setIsErrorVisible(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (currentQuery.length) {
+      fetchData();
+    }
+  }, [currentPage, currentQuery, shapeData]);
 
   useEffect(() => {
     const handleKeyDown = e => {
@@ -107,24 +109,22 @@ function App() {
 
   return (
     <>
-      <SearchBar onSearch={search} />
+      <SearchBar onSubmit={onSubmit} />
 
-      {!isLoading && gallery.length > 0 && <ImageGallery gallery={gallery} openModal={onOpenModal} />}
+      {!isLoading &&
+        gallery.length > 0 &&
+        <ImageGallery gallery={gallery} openModal={onOpenModal} />}
 
-      {isLoading && <ColorRing
-        visible={true}
-        height="80"
-        width="80"
-        ariaLabel="color-ring-loading"
-        wrapperStyle={{}}
-        wrapperClass="color-ring-wrapper"
-        colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
-        />
-      }
+      {isLoading && <Loader />}
 
-      {!isLoading && isErrorVisible && <p>Something went wrong</p>}
+      {!isLoading && isErrorVisible && <ErrorMessage />}
 
-      {!isLoading && !isErrorVisible && totalPages > 1 && currentPage !== totalPages && !noResults && <LoadMore loadMore={onLoadMore} />}
+      {!isLoading &&
+        !isErrorVisible &&
+        totalPages > 1 &&
+        currentPage !== totalPages &&
+        !noResults && 
+        <LoadMore loadMore={onLoadMore} />}
 
       {!isLoading && noResults && <p>No results</p>}
 
